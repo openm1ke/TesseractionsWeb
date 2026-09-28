@@ -10,6 +10,7 @@ export interface Settings {
   hints: boolean
   sound: boolean
   reduceMotion: boolean
+  tutorialCompleted: boolean
 }
 
 export interface SavedGame {
@@ -33,6 +34,7 @@ export function loadSettings(): Settings {
     reduceMotion: typeof window.matchMedia === 'function'
       ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
       : false,
+    tutorialCompleted: false,
   }
   try {
     return { ...fallback, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') as Partial<Settings> }

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Board } from './components/Board'
+import { SettingsIcon } from './components/Icons'
+import { TutorialScreen } from './components/TutorialScreen'
 import { chooseAiMove, type Difficulty } from './game/ai'
 import { playStone, playWin } from './game/audio'
 import {
@@ -22,7 +24,7 @@ import {
 } from './game/storage'
 import { copy } from './i18n/copy'
 
-type Screen = 'menu' | 'setup' | 'game' | 'settings' | 'rules' | 'review'
+type Screen = 'menu' | 'setup' | 'game' | 'settings' | 'tutorial' | 'review'
 type ColorChoice = Player | 'random'
 
 function Brand({ compact = false }: { compact?: boolean }) {
@@ -42,6 +44,7 @@ export default function App() {
   const [selected, setSelected] = useState<Move | null>(null)
   const [reviewPly, setReviewPly] = useState(0)
   const [focusedMove, setFocusedMove] = useState<number | null>(null)
+  const [tutorialDestination, setTutorialDestination] = useState<'setup' | 'local' | null>(null)
   const historyRef = useRef<HTMLDivElement>(null)
   const text = copy[settings.language]
 
@@ -99,6 +102,25 @@ export default function App() {
     setScreen('game')
   }
 
+  const requestMode = (mode: GameMode) => {
+    if (!settings.tutorialCompleted) {
+      setTutorialDestination(mode === 'ai' ? 'setup' : 'local')
+      setScreen('tutorial')
+      return
+    }
+    if (mode === 'ai') setScreen('setup')
+    else startGame('local')
+  }
+
+  const finishTutorial = () => {
+    updateSettings({ tutorialCompleted: true })
+    const destination = tutorialDestination
+    setTutorialDestination(null)
+    if (destination === 'setup') setScreen('setup')
+    else if (destination === 'local') startGame('local')
+    else setScreen('menu')
+  }
+
   const continueGame = () => {
     if (!saved) return
     setGame(saved)
@@ -151,7 +173,7 @@ export default function App() {
   }
 
   if (screen === 'settings') return <SettingsScreen settings={settings} text={text} onChange={updateSettings} onBack={() => setScreen('menu')} />
-  if (screen === 'rules') return <RulesScreen text={text} onBack={() => setScreen('menu')} />
+  if (screen === 'tutorial') return <TutorialScreen text={text} language={settings.language} coordinates={settings.coordinates} onBack={() => { setTutorialDestination(null); setScreen('menu') }} onDone={finishTutorial} />
   if (screen === 'setup') return <SetupScreen difficulty={difficulty} color={colorChoice} text={text} onDifficulty={setDifficulty} onColor={setColorChoice} onBack={() => setScreen('menu')} onStart={() => startGame('ai')} />
   if (screen === 'review' && game) {
     return <ReviewScreen game={game} ply={reviewPly} text={text} settings={settings} onPly={setReviewPly} onBack={() => setScreen('game')} />
@@ -195,7 +217,7 @@ export default function App() {
     </main>
   }
 
-  return <MenuScreen hasSaved={Boolean(saved)} text={text} language={settings.language} onLanguage={(language) => updateSettings({ language })} onContinue={continueGame} onVsAi={() => setScreen('setup')} onLocal={() => startGame('local')} onRules={() => setScreen('rules')} onSettings={() => setScreen('settings')} />
+  return <MenuScreen hasSaved={Boolean(saved)} text={text} language={settings.language} onLanguage={(language) => updateSettings({ language })} onContinue={continueGame} onVsAi={() => requestMode('ai')} onLocal={() => requestMode('local')} onRules={() => { setTutorialDestination(null); setScreen('tutorial') }} onSettings={() => setScreen('settings')} />
 }
 
 type AppText = typeof copy.ru
@@ -211,7 +233,7 @@ function MenuScreen({ hasSaved, text, language, onLanguage, onContinue, onVsAi, 
         <button type="button" aria-pressed={language === 'ru'} onClick={() => onLanguage('ru')}>RU</button>
         <button type="button" aria-pressed={language === 'en'} onClick={() => onLanguage('en')}>EN</button>
       </div>
-      <button className="icon-button" type="button" onClick={onSettings} aria-label={text.settings}>⚙</button>
+      <button className="icon-button" type="button" onClick={onSettings} aria-label={text.settings}><SettingsIcon /></button>
     </header>
     <section className="hero">
       <Brand />
@@ -222,7 +244,6 @@ function MenuScreen({ hasSaved, text, language, onLanguage, onContinue, onVsAi, 
         <button className="mode-button" type="button" onClick={onLocal}><span className="mode-glyph ivory">◆</span><span><b>{text.local}</b><small>{text.localLine}</small></span><strong>›</strong></button>
         <button className="secondary-button" type="button" onClick={onRules}>{text.howTo}</button>
       </div>
-      <p className="offline-note">{text.offline}</p>
     </section>
     <footer><a href="./privacy.html">{text.privacy}</a></footer>
   </main>
@@ -270,10 +291,6 @@ function ReviewScreen({ game, ply, text, settings, onPly, onBack }: { game: Save
       <div className="review-controls"><button type="button" aria-label={text.first} onClick={() => onPly(0)} disabled={ply === 0}>|‹</button><button type="button" aria-label={text.previous} onClick={() => onPly(Math.max(0, ply - 1))} disabled={ply === 0}>‹</button><button type="button" aria-label={text.next} onClick={() => onPly(Math.min(game.moves.length, ply + 1))} disabled={ply === game.moves.length}>›</button><button type="button" aria-label={text.last} onClick={() => onPly(game.moves.length)} disabled={ply === game.moves.length}>›|</button></div>
     </section>
   </main>
-}
-
-function RulesScreen({ text, onBack }: { text: AppText; onBack: () => void }) {
-  return <main className="standard-screen"><TitleBar title={text.howTo} onBack={onBack} text={text} /><section className="content-card rules-card"><div className="rule-step"><i>01</i><div><h2>{text.rulesGoal}</h2><p>{text.rulesGoalBody}</p></div></div><div className="rule-diagram"><span className="red-path" /><span className="ivory-path" /></div><div className="rule-step"><i>02</i><div><h2>{text.rulesPlace}</h2><p>{text.rulesPlaceBody}</p></div></div><div className="rule-step"><i>03</i><div><h2>{text.rulesBlock}</h2><p>{text.rulesBlockBody}</p></div></div><button className="primary-button wide" type="button" onClick={onBack}>{text.back}</button></section></main>
 }
 
 function SettingsScreen({ settings, text, onChange, onBack }: { settings: Settings; text: AppText; onChange: (patch: Partial<Settings>) => void; onBack: () => void }) {

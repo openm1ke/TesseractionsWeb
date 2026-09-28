@@ -7,6 +7,7 @@ Independent browser port of the Flutter game in `../Tesseractions`. It follows t
 - Playable local two-player mode and three offline AI levels
 - Exact shared-slot blocking and graph-based victory detection
 - Russian and English interface
+- Five-step first-match tutorial with an interactive placement lesson
 - Board coordinates, placement hints, reduced-motion option, and game sounds
 - Horizontal move history, finished-match review, and automatic local save
 - Responsive mouse, touch, and keyboard-friendly UI

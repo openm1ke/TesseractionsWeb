@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Launcher/store icon derived from lib/ui/glyphs/brand_mark.dart. -->
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#263238"/>
+      <stop offset="1" stop-color="#0E1316"/>
+    </linearGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#2B3339"/>
+      <stop offset="1" stop-color="#1F252A"/>
+    </linearGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#FF3F48"/>
+      <stop offset=".45" stop-color="#F12B34"/>
+      <stop offset="1" stop-color="#7F1E24"/>
+    </linearGradient>
+    <linearGradient id="ivory" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#FFFBF3"/>
+      <stop offset=".45" stop-color="#F8EFDF"/>
+      <stop offset="1" stop-color="#B6AC98"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#background)"/>
+  <path d="M375 182H649L842 375V649L649 842H375L182 649V375Z" fill="url(#body)" stroke="#000000" stroke-width="20" stroke-linejoin="miter"/>
+  <path d="M386 210H638L814 386V638L638 814H386L210 638V386Z" fill="none" stroke="#4B525F" stroke-opacity=".45" stroke-width="8"/>
+  <rect x="289" y="434" width="446" height="156" rx="37" fill="#000000"/>
+  <path d="M330 447H505V577H330Q302 577 302 549V475Q302 447 330 447Z" fill="url(#red)"/>
+  <path d="M519 447H694Q722 447 722 475V549Q722 577 694 577H519Z" fill="url(#ivory)"/>
+</svg>

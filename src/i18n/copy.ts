@@ -26,13 +26,13 @@ const ru = {
   rulesGoalBody: 'Красные строят непрерывный путь сверху вниз. Светлые — слева направо. Красные ходят первыми.',
   rulesPlaceBody: 'Выберите свободный промежуток между двумя узлами своего цвета. Нажмите его второй раз, чтобы установить фишку.',
   rulesBlockBody: 'Каждый слот общий для двух пересекающихся направлений. Ваша фишка одновременно продолжает ваш путь и перекрывает путь соперника.',
-  tutorialTitle: 'КАК ИГРАТЬ', tutorialEyebrow: 'TESSERACTIONS · УРОК', tutorialNext: 'ДАЛЕЕ', tutorialDone: 'ПРОДОЛЖИТЬ',
-  tutorialGoalTitle: 'Соедините свои стороны', tutorialGoalBody: 'Красные строят путь от верхнего красного борта к нижнему. Светлые соединяют левый и правый светлые борта.',
-  tutorialPlaceTitle: 'Поставьте фишку', tutorialPlaceBody: 'Выберите промежуток между соседними узлами своего цвета. Первое нажатие показывает фишку, второе подтверждает ход.',
-  tutorialBlockTitle: 'Один слот — одна фишка', tutorialBlockBody: 'Красное и светлое соединения пересекаются в одном физическом слоте. Заняв его, вы продолжаете свой путь и блокируете соперника.',
-  tutorialWinTitle: 'Соберите непрерывную цепь', tutorialWinBody: 'Соединения могут поворачивать и ветвиться. Первый игрок, чей непрерывный путь достиг противоположной стороны, сразу побеждает.',
-  tutorialReadyTitle: 'Можно начинать', tutorialReadyBody: 'Красные всегда ходят первыми. Играйте против ИИ или передавайте устройство друг другу в локальном матче.',
-  tutorialTapOnce: 'Нажмите на свободный слот', tutorialTapAgain: 'Теперь нажмите ещё раз', tutorialPlaced: 'Отлично — фишка установлена', tutorialRedStarts: 'КРАСНЫЕ ХОДЯТ ПЕРВЫМИ',
+  tutorialTitle: 'КАК ИГРАТЬ', lessonProgress: 'УРОК {lesson} ИЗ {count}',
+  lessonGoalTitle: 'Ваша цель', lessonGoalRed: 'КРАСНЫЙ строит путь СВЕРХУ ВНИЗ и ходит первым.', lessonGoalIvory: 'БЕЛЫЙ строит путь СЛЕВА НАПРАВО.', lessonGoalRace: 'Побеждает тот, кто первым соединит свои две стороны.',
+  lessonPlaceTitle: 'Поставьте фишку', lessonPlaceBody: 'Нажмите на промежуток между двумя красными узлами.',
+  lessonConfirmTitle: 'Подтвердите', lessonConfirmBody: 'Нажмите туда же ещё раз, чтобы поставить фишку.', lessonConfirmDone: 'Готово.',
+  lessonBlockTitle: 'Одна фишка на место', lessonBlockBody: 'Фишка БЕЛОГО занимает место на вашем пути, и пройти там нельзя. БЕЛОМУ осталась одна фишка до пути СЛЕВА НАПРАВО: займите этот промежуток, чтобы перекрыть его.', lessonBlockNudge: 'Так путь БЕЛОГО остаётся открытым.', lessonBlockDone: 'Перекрыто. БЕЛЫЙ здесь больше не пройдёт.', lessonHeldByIvory: 'ЗАНЯТО БЕЛЫМ',
+  lessonWinTitle: 'Победа', lessonWinBody: 'Достройте свой путь СВЕРХУ ВНИЗ.', lessonWinNudge: 'Путь пока не достроен.', lessonWinDone: 'Вы построили путь СВЕРХУ ВНИЗ.',
+  lessonDoneTitle: 'Вы готовы.', lessonDoneBody: 'Соедините свои стороны раньше, чем соперник соединит свои.', lessonSkip: 'ПРОПУСТИТЬ', lessonNext: 'ДАЛЕЕ', lessonDone: 'ГОТОВО', lessonPlayVsAi: 'ИГРАТЬ ПРОТИВ ИИ',
 }
 
 const en: typeof ru = {
@@ -61,13 +61,13 @@ const en: typeof ru = {
   rulesGoalBody: 'Red builds an unbroken path from top to bottom. Ivory connects left to right. Red moves first.',
   rulesPlaceBody: 'Choose a free gap between two nodes of your color. Select the same spot again to place the piece.',
   rulesBlockBody: 'Each slot is shared by two crossing directions. A piece extends your path and blocks the opponent at the same time.',
-  tutorialTitle: 'HOW TO PLAY', tutorialEyebrow: 'TESSERACTIONS · LESSON', tutorialNext: 'NEXT', tutorialDone: 'CONTINUE',
-  tutorialGoalTitle: 'Connect your sides', tutorialGoalBody: 'Red builds a path from the top red rail to the bottom. Ivory connects the left and right ivory rails.',
-  tutorialPlaceTitle: 'Place a piece', tutorialPlaceBody: 'Choose a gap between neighboring nodes of your color. The first tap previews the piece; the second confirms the move.',
-  tutorialBlockTitle: 'One slot, one piece', tutorialBlockBody: 'A red and ivory connection cross in one physical slot. Taking it extends your path and blocks your opponent.',
-  tutorialWinTitle: 'Build an unbroken chain', tutorialWinBody: 'Connections may turn and branch. The first player whose continuous path reaches the opposite side wins immediately.',
-  tutorialReadyTitle: 'You are ready', tutorialReadyBody: 'Red always moves first. Play against the AI or pass the device between players in a local match.',
-  tutorialTapOnce: 'Tap the open slot', tutorialTapAgain: 'Now tap it again', tutorialPlaced: 'Great — the piece is placed', tutorialRedStarts: 'RED MOVES FIRST',
+  tutorialTitle: 'HOW TO PLAY', lessonProgress: 'LESSON {lesson} OF {count}',
+  lessonGoalTitle: 'Your goal', lessonGoalRed: 'RED connects TOP–BOTTOM and moves first.', lessonGoalIvory: 'IVORY connects LEFT–RIGHT.', lessonGoalRace: 'The first to connect their two sides wins.',
+  lessonPlaceTitle: 'Place a piece', lessonPlaceBody: 'Tap the gap between two red nodes.',
+  lessonConfirmTitle: 'Confirm', lessonConfirmBody: 'Tap the same spot again to place it.', lessonConfirmDone: 'Placed.',
+  lessonBlockTitle: 'One piece per slot', lessonBlockBody: "IVORY's piece holds the slot under your path, so you can't cross there. IVORY is one piece from LEFT–RIGHT: take its gap to block it.", lessonBlockNudge: "That leaves IVORY's gap open.", lessonBlockDone: "Blocked. IVORY can't cross there now.", lessonHeldByIvory: 'HELD BY IVORY',
+  lessonWinTitle: 'Win', lessonWinBody: 'Complete your TOP–BOTTOM path.', lessonWinNudge: "That doesn't complete your path yet.", lessonWinDone: 'You connected TOP–BOTTOM.',
+  lessonDoneTitle: "You're ready.", lessonDoneBody: 'Connect your two sides before your opponent connects theirs.', lessonSkip: 'SKIP', lessonNext: 'NEXT', lessonDone: 'DONE', lessonPlayVsAi: 'PLAY VS AI',
 }
 
 export type Copy = typeof ru

@@ -112,13 +112,18 @@ export default function App() {
     else startGame('local')
   }
 
-  const finishTutorial = () => {
+  const tutorialPrimary = () => {
     updateSettings({ tutorialCompleted: true })
     const destination = tutorialDestination
     setTutorialDestination(null)
-    if (destination === 'setup') setScreen('setup')
-    else if (destination === 'local') startGame('local')
-    else setScreen('menu')
+    if (destination === 'local') startGame('local')
+    else setScreen('setup')
+  }
+
+  const tutorialDone = () => {
+    updateSettings({ tutorialCompleted: true })
+    setTutorialDestination(null)
+    setScreen('menu')
   }
 
   const continueGame = () => {
@@ -173,7 +178,7 @@ export default function App() {
   }
 
   if (screen === 'settings') return <SettingsScreen settings={settings} text={text} onChange={updateSettings} onBack={() => setScreen('menu')} />
-  if (screen === 'tutorial') return <TutorialScreen text={text} language={settings.language} coordinates={settings.coordinates} onBack={() => { setTutorialDestination(null); setScreen('menu') }} onDone={finishTutorial} />
+  if (screen === 'tutorial') return <TutorialScreen text={text} language={settings.language} coordinates={settings.coordinates} sound={settings.sound} primaryLabel={tutorialDestination === 'local' ? text.local : text.lessonPlayVsAi} onBack={() => { setTutorialDestination(null); setScreen('menu') }} onPrimary={tutorialPrimary} onDone={tutorialDone} />
   if (screen === 'setup') return <SetupScreen difficulty={difficulty} color={colorChoice} text={text} onDifficulty={setDifficulty} onColor={setColorChoice} onBack={() => setScreen('menu')} onStart={() => startGame('ai')} />
   if (screen === 'review' && game) {
     return <ReviewScreen game={game} ply={reviewPly} text={text} settings={settings} onPly={setReviewPly} onBack={() => setScreen('game')} />

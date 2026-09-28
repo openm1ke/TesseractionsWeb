@@ -1,122 +1,226 @@
-import { useEffect, useState } from 'react'
-import { Board } from './Board'
-import type { Move } from '../game/engine'
+import { useState } from 'react'
+import { playStone, playWin } from '../game/audio'
+import { detectWinner, edgeKey, type Move } from '../game/engine'
 import type { Settings } from '../game/storage'
 import type { Copy } from '../i18n/copy'
+import { Board } from './Board'
 
 interface TutorialScreenProps {
   text: Copy
   language: Settings['language']
   coordinates: boolean
+  sound: boolean
+  primaryLabel: string
   onBack: () => void
+  onPrimary: () => void
   onDone: () => void
 }
 
-type LessonKind = 'goal' | 'place' | 'block' | 'win' | 'ready'
+type LessonStep = 'goalRed' | 'goalIvory' | 'place' | 'confirm' | 'block' | 'win' | 'done'
 
-export function TutorialScreen({ text, language, coordinates, onBack, onDone }: TutorialScreenProps) {
-  const [index, setIndex] = useState(0)
-  const [placementStage, setPlacementStage] = useState(0)
-  const lessons: Array<{ kind: LessonKind; title: string; body: string }> = [
-    { kind: 'goal', title: text.tutorialGoalTitle, body: text.tutorialGoalBody },
-    { kind: 'place', title: text.tutorialPlaceTitle, body: text.tutorialPlaceBody },
-    { kind: 'block', title: text.tutorialBlockTitle, body: text.tutorialBlockBody },
-    { kind: 'win', title: text.tutorialWinTitle, body: text.tutorialWinBody },
-    { kind: 'ready', title: text.tutorialReadyTitle, body: text.tutorialReadyBody },
-  ]
-  const lesson = lessons[index]
+const move = (player: Move['player'], orientation: Move['orientation'], column: number, row: number): Move => ({ player, orientation, column, row })
+const red = (orientation: Move['orientation'], column: number, row: number) => move('red', orientation, column, row)
+const ivory = (orientation: Move['orientation'], column: number, row: number) => move('ivory', orientation, column, row)
 
-  useEffect(() => {
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowLeft' && index > 0) setIndex(index - 1)
-      if (event.key === 'ArrowRight') {
-        if (index < lessons.length - 1) setIndex(index + 1)
-        else onDone()
-      }
-    }
-    window.addEventListener('keydown', handleKey)
-    return () => window.removeEventListener('keydown', handleKey)
-  }, [index, lessons.length, onDone])
+const PLACE_TARGET = red('vertical', 2, 2)
+const HELD_SLOT = red('vertical', 1, 2)
+const BLOCK_TARGET = red('vertical', 3, 2)
+const WIN_TARGET = red('vertical', 2, 2)
 
-  const goPrevious = () => {
-    if (index === 0) return
-    setIndex(index - 1)
-    setPlacementStage(0)
+const BLOCK_POSITION: Move[] = [
+  red('vertical', 1, 0),
+  ivory('horizontal', 1, 2),
+  red('vertical', 1, 1),
+  ivory('horizontal', 0, 2),
+  red('vertical', 3, 0),
+  ivory('horizontal', 2, 2),
+  red('vertical', 3, 4),
+  ivory('horizontal', 4, 2),
+]
+
+const WIN_POSITION: Move[] = [
+  red('vertical', 2, 0),
+  ivory('horizontal', 0, 1),
+  red('vertical', 2, 1),
+  ivory('horizontal', 0, 3),
+  red('vertical', 2, 3),
+  ivory('horizontal', 4, 1),
+  red('vertical', 2, 4),
+  ivory('horizontal', 4, 3),
+]
+
+const WON_POSITION = [...WIN_POSITION, WIN_TARGET]
+
+const lessonNumber: Record<LessonStep, number | null> = {
+  goalRed: 1,
+  goalIvory: 1,
+  place: 2,
+  confirm: 3,
+  block: 4,
+  win: 5,
+  done: null,
+}
+
+export function TutorialScreen({ text, language, coordinates, sound, primaryLabel, onBack, onPrimary, onDone }: TutorialScreenProps) {
+  const [step, setStep] = useState<LessonStep>('goalRed')
+  const [moves, setMoves] = useState<Move[]>([])
+  const [selected, setSelected] = useState<Move | null>(null)
+  const [succeeded, setSucceeded] = useState(false)
+  const [feedback, setFeedback] = useState<string | null>(null)
+
+  const lesson = lessonNumber[step]
+  const winning = detectWinner(moves)
+  const boardActive = !succeeded && ['place', 'confirm', 'block', 'win'].includes(step)
+
+  const title = step === 'goalRed' || step === 'goalIvory'
+    ? text.lessonGoalTitle
+    : step === 'place'
+      ? text.lessonPlaceTitle
+      : step === 'confirm'
+        ? text.lessonConfirmTitle
+        : step === 'block'
+          ? text.lessonBlockTitle
+          : step === 'win'
+            ? text.lessonWinTitle
+            : text.lessonDoneTitle
+
+  const lines = step === 'goalRed'
+    ? [text.lessonGoalRed]
+    : step === 'goalIvory'
+      ? [text.lessonGoalIvory, text.lessonGoalRace]
+      : step === 'place'
+        ? [text.lessonPlaceBody]
+        : step === 'confirm'
+          ? [succeeded ? text.lessonConfirmDone : text.lessonConfirmBody]
+          : step === 'block'
+            ? [succeeded ? text.lessonBlockDone : text.lessonBlockBody]
+            : step === 'win'
+              ? [succeeded ? text.lessonWinDone : text.lessonWinBody]
+              : [text.lessonDoneBody]
+
+  const emphasisRails = succeeded
+    ? []
+    : step === 'goalRed' || step === 'win'
+      ? ['red' as const]
+      : step === 'goalIvory' || step === 'block'
+        ? ['ivory' as const]
+        : []
+  const emphasisMoves = succeeded
+    ? []
+    : step === 'place'
+      ? [PLACE_TARGET]
+      : step === 'confirm' && selected
+        ? [selected]
+        : step === 'block'
+          ? [BLOCK_TARGET]
+          : step === 'win'
+            ? [WIN_TARGET]
+            : []
+
+  const goTo = (next: LessonStep) => {
+    setStep(next)
+    setSucceeded(false)
+    setFeedback(null)
+    setSelected(null)
+    if (next === 'block') setMoves(BLOCK_POSITION)
+    else if (next === 'win') setMoves(WIN_POSITION)
+    else if (next === 'done') setMoves(step === 'win' && succeeded ? moves : WON_POSITION)
+    else if (next !== 'confirm') setMoves([])
   }
-  const goNext = () => {
-    if (index === lessons.length - 1) {
-      onDone()
+
+  const next = () => {
+    const order: LessonStep[] = ['goalRed', 'goalIvory', 'place', 'confirm', 'block', 'win', 'done']
+    goTo(order[order.indexOf(step) + 1])
+  }
+
+  const choose = (candidate: Move) => {
+    if (!boardActive) return
+    if (step === 'place') {
+      setSelected(candidate)
+      setFeedback(null)
+      setStep('confirm')
       return
     }
-    setIndex(index + 1)
-    setPlacementStage(0)
+    if (step === 'confirm') {
+      if (!selected || edgeKey(selected) !== edgeKey(candidate)) {
+        setSelected(candidate)
+        setFeedback(null)
+        return
+      }
+      setMoves([...moves, candidate])
+      setSelected(null)
+      setSucceeded(true)
+      setFeedback(null)
+      playStone('red', sound)
+      return
+    }
+    if (step === 'block') {
+      if (edgeKey(candidate) === edgeKey(HELD_SLOT)) {
+        setSelected(null)
+        setFeedback(text.lessonHeldByIvory)
+        return
+      }
+      if (edgeKey(candidate) !== edgeKey(BLOCK_TARGET)) {
+        setSelected(null)
+        setFeedback(text.lessonBlockNudge)
+        return
+      }
+    }
+    if (step === 'win' && edgeKey(candidate) !== edgeKey(WIN_TARGET)) {
+      setSelected(null)
+      setFeedback(text.lessonWinNudge)
+      return
+    }
+    if (!selected || edgeKey(selected) !== edgeKey(candidate)) {
+      setSelected(candidate)
+      setFeedback(null)
+      return
+    }
+    const nextMoves = [...moves, candidate]
+    setMoves(nextMoves)
+    setSelected(null)
+    setSucceeded(true)
+    setFeedback(null)
+    playStone('red', sound)
+    if (step === 'win') playWin(sound)
   }
 
-  return <main className="tutorial-screen">
+  const canContinue = step === 'goalRed' || step === 'goalIvory' || succeeded
+
+  return <main className="tutorial-screen android-tutorial">
     <header className="tutorial-topbar">
       <button className="icon-button" type="button" onClick={onBack} aria-label={text.back}>‹</button>
       <h1>{text.tutorialTitle}</h1>
-      <span className="tutorial-counter" aria-live="polite">{index + 1}/{lessons.length}</span>
+      <span />
     </header>
     <section className="tutorial-lesson">
       <div className="tutorial-visual">
-        <TutorialVisual kind={lesson.kind} placementStage={placementStage} onPlace={() => setPlacementStage((stage) => Math.min(stage + 1, 2))} text={text} language={language} coordinates={coordinates} />
+        <div className="tutorial-board android-board">
+          <Board
+            moves={moves}
+            activePlayer="red"
+            selected={selected}
+            coordinates={coordinates}
+            hints={false}
+            interactive={boardActive}
+            winningMoveIndexes={winning?.moveIndexes}
+            language={language}
+            onSlot={choose}
+            extraMoves={step === 'block' ? [HELD_SLOT] : []}
+            emphasisRails={emphasisRails}
+            emphasisMoves={emphasisMoves}
+          />
+        </div>
       </div>
-      <div className="tutorial-copy">
-        <span>{text.tutorialEyebrow}</span>
-        <h2>{lesson.title}</h2>
-        <p>{lesson.body}</p>
+      <div className="tutorial-copy android-copy">
+        {lesson && <div className="android-progress"><span>{text.lessonProgress.replace('{lesson}', String(lesson)).replace('{count}', '5')}</span><div aria-hidden="true">{Array.from({ length: 5 }, (_, index) => <i key={index} className={index < lesson ? 'active' : ''} />)}</div></div>}
+        <h2>{title}</h2>
+        {lines.map((line) => <p key={line}>{line}</p>)}
+        {feedback && <strong className="lesson-feedback" aria-live="polite">{feedback}</strong>}
       </div>
     </section>
-    <nav className="tutorial-controls" aria-label={text.tutorialTitle}>
-      <button type="button" onClick={goPrevious} disabled={index === 0}>{text.back}</button>
-      <div aria-hidden="true">{lessons.map((_, lessonIndex) => <i key={lessonIndex} className={lessonIndex === index ? 'active' : ''} />)}</div>
-      <button className="next" type="button" onClick={goNext}>{index === lessons.length - 1 ? text.tutorialDone : text.tutorialNext}</button>
-    </nav>
+    {step === 'done'
+      ? <div className="tutorial-done-actions"><button className="primary-button wide" type="button" onClick={onPrimary}>{primaryLabel}</button><button className="text-button wide" type="button" onClick={onDone}>{text.lessonDone}</button></div>
+      : <nav className="android-tutorial-actions" aria-label={text.tutorialTitle}><button className="text-button" type="button" onClick={() => goTo('done')}>{text.lessonSkip}</button>{canContinue && <button className="primary-button" type="button" onClick={next}>{text.lessonNext}</button>}</nav>}
   </main>
-}
-
-function TutorialVisual({ kind, placementStage, onPlace, text, language, coordinates }: {
-  kind: LessonKind
-  placementStage: number
-  onPlace: () => void
-  text: Copy
-  language: Settings['language']
-  coordinates: boolean
-}) {
-  if (kind === 'goal') {
-    return <div className="tutorial-board tutorial-goal-board">
-      <Board moves={[]} activePlayer="red" selected={null} coordinates={coordinates} hints={false} interactive={false} language={language} onSlot={() => undefined} />
-      <span className="goal-arrow red">↓</span><span className="goal-arrow ivory">→</span>
-    </div>
-  }
-  if (kind === 'place') {
-    const tip = placementStage === 0 ? text.tutorialTapOnce : placementStage === 1 ? text.tutorialTapAgain : text.tutorialPlaced
-    return <div className={`placement-demo stage-${placementStage}`}>
-      <div className="demo-rail" />
-      <span className="demo-node top" /><span className="demo-node bottom" />
-      {placementStage > 0 && <span className="demo-stripe" />}
-      {placementStage > 0 && <span className="demo-token" />}
-      <button type="button" aria-label={tip} onClick={onPlace}><i /></button>
-      <strong aria-live="polite">{tip}</strong>
-    </div>
-  }
-  if (kind === 'block') {
-    return <div className="block-demo">
-      <span className="block-line ivory" /><span className="block-line red" />
-      <span className="block-node top" /><span className="block-node bottom" /><span className="block-node left" /><span className="block-node right" />
-      <span className="block-token" /><span className="blocked-mark">×</span>
-    </div>
-  }
-  if (kind === 'win') {
-    const winningMoves: Move[] = Array.from({ length: 5 }, (_, row) => ({ player: 'red', column: 2, row, orientation: 'vertical' }))
-    return <div className="tutorial-board">
-      <Board moves={winningMoves} activePlayer="ivory" selected={null} coordinates={coordinates} hints={false} interactive={false} winningMoveIndexes={[0, 1, 2, 3, 4]} language={language} onSlot={() => undefined} />
-    </div>
-  }
-  return <div className="ready-demo">
-    <div className="ready-player ivory"><i>I</i><span>IVORY</span></div>
-    <div className="ready-turn"><span>◆</span><strong>{text.tutorialRedStarts}</strong></div>
-    <div className="ready-player red"><i>R</i><span>RED</span></div>
-  </div>
 }

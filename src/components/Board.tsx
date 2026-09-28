@@ -22,6 +22,9 @@ interface BoardProps {
   focusedMoveIndex?: number | null
   language: Language
   onSlot: (move: Move) => void
+  extraMoves?: Move[]
+  emphasisRails?: Player[]
+  emphasisMoves?: Move[]
 }
 
 const INNER = 78
@@ -80,8 +83,9 @@ function Node({ player, column, row }: { player: Player; column: number; row: nu
   return <rect x={center.x - NODE / 2} y={center.y - NODE / 2} width={NODE} height={NODE} rx="4" fill={player === 'red' ? 'url(#red-node)' : 'url(#ivory-node)'} stroke="#020506" strokeWidth="5" />
 }
 
-export function Board({ moves, activePlayer, selected, coordinates, hints, interactive, winningMoveIndexes = [], focusedMoveIndex, language, onSlot }: BoardProps) {
+export function Board({ moves, activePlayer, selected, coordinates, hints, interactive, winningMoveIndexes = [], focusedMoveIndex, language, onSlot, extraMoves = [], emphasisRails = [], emphasisMoves = [] }: BoardProps) {
   const legal = legalMovesFor(activePlayer, moves)
+  const candidates = [...legal, ...extraMoves].filter((move, index, list) => list.findIndex((candidate) => edgeKey(candidate) === edgeKey(move)) === index)
   const winning = new Set(winningMoveIndexes)
   const label = (move: Move) => {
     const color = language === 'ru' ? (move.player === 'red' ? 'красных' : 'светлых') : move.player
@@ -126,8 +130,22 @@ export function Board({ moves, activePlayer, selected, coordinates, hints, inter
           {Array.from({ length: 5 }, (_, row) => <text key={`il-${row}`} x="52" y={point('ivory', 0, row).y + 8} className="ivory-coordinate">{row + 1}</text>)}
           {Array.from({ length: 6 }, (_, row) => <text key={`rr-${row}`} x="948" y={point('red', 0, row).y + 8} className="red-coordinate">{row + 1}</text>)}
         </g>}
+        <g className="board-emphasis" aria-hidden="true">
+          {emphasisRails.includes('red') && <>
+            <rect className="board-emphasis-rail red" x={ORIGIN + NODE / 2} y={INNER} width={EXTENT - NODE} height={RAIL} />
+            <rect className="board-emphasis-rail red" x={ORIGIN + NODE / 2} y={INNER + INNER_SIZE - RAIL} width={EXTENT - NODE} height={RAIL} />
+          </>}
+          {emphasisRails.includes('ivory') && <>
+            <rect className="board-emphasis-rail ivory" x={INNER} y={ORIGIN + NODE / 2} width={RAIL} height={EXTENT - NODE} />
+            <rect className="board-emphasis-rail ivory" x={INNER + INNER_SIZE - RAIL} y={ORIGIN + NODE / 2} width={RAIL} height={EXTENT - NODE} />
+          </>}
+          {emphasisMoves.map((move) => {
+            const center = slotCentre(move)
+            return <circle key={`emphasis-${edgeKey(move)}`} className="board-emphasis-ring" cx={center.x} cy={center.y} r="55" />
+          })}
+        </g>
       </svg>
-      {interactive && legal.map((move) => {
+      {interactive && candidates.map((move) => {
         const center = slotCentre(move)
         const isSelected = selected ? edgeKey(selected) === edgeKey(move) : false
         const style = { left: `${center.x / 10}%`, top: `${center.y / 10}%` } as CSSProperties
